@@ -1,0 +1,2 @@
+D:\Spiludvikling\BachelorGame\Bachelor Game\obj\Debug\Assembly-CSharp.csprojResolveAssemblyReference.cache
+D:\Spiludvikling\BachelorGame\Bachelor Game\obj\Debug\Assembly-CSharp.csproj.CoreCompileInputs.cache
