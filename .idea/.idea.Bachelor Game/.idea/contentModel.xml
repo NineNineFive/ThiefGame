@@ -15,6 +15,7 @@
           <e p="AlarmBehaviour.cs" t="Include" />
           <e p="AStar.cs" t="Include" />
           <e p="AudioManager.cs" t="Include" />
+          <e p="BackgroundMusic.cs" t="Include" />
           <e p="Data.cs" t="Include" />
           <e p="DoorBehaviour.cs" t="Include" />
           <e p="endBehaviour.cs" t="Include" />
@@ -33,6 +34,7 @@
           </e>
           <e p="KeyBehaviour.cs" t="Include" />
           <e p="levelComplete.cs" t="Include" />
+          <e p="MouseHover.cs" t="Include" />
           <e p="Path.cs" t="Include" />
           <e p="PlayerController.cs" t="Include" />
           <e p="Sound.cs" t="Include" />

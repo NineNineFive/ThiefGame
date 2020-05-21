@@ -26,31 +26,33 @@ public class Graph {
 	}
 	
 	public void calculateEdges() {
-		foreach (Vertex vertex1 in vertices) {
-			vertex1.edges = new List<Edge>();
-			foreach (Vertex vertex2 in vertices) {
-				// We should not add edges to the node itself
-				if(!vertex1.Equals(vertex2)){
-                    
-					// Does the ray intersect any objects excluding the player layer
-					Vector2 position1 = new Vector2(vertex1.x, vertex1.y);
-					Vector2 position2 = new Vector2(vertex2.x, vertex2.y);
-					Vector2 direction = position1 - position2;
-                    
-					// Cast a ray straight down.
-					RaycastHit2D[] hit = Physics2D.LinecastAll(position1, position2);
-					//Debug.Log(hit.Length);
-					// If it hits something...
-					bool isHit = false;
-					foreach(RaycastHit2D raycastHit2D in hit){
-						if (raycastHit2D.collider.CompareTag("Obstacle")) {
-							isHit = true;
+		if(vertices!=null){
+			foreach (Vertex vertex1 in vertices) {
+				vertex1.edges = new List<Edge>();
+				foreach (Vertex vertex2 in vertices) {
+					// We should not add edges to the node itself
+					if(!vertex1.Equals(vertex2)){
+	                    
+						// Does the ray intersect any objects excluding the player layer
+						Vector2 position1 = new Vector2(vertex1.x, vertex1.y);
+						Vector2 position2 = new Vector2(vertex2.x, vertex2.y);
+						Vector2 direction = position1 - position2;
+	                    
+						// Cast a ray straight down.
+						RaycastHit2D[] hit = Physics2D.LinecastAll(position1, position2);
+						//Debug.Log(hit.Length);
+						// If it hits something...
+						bool isHit = false;
+						foreach(RaycastHit2D raycastHit2D in hit){
+							if (raycastHit2D.collider.CompareTag("Obstacle")) {
+								isHit = true;
+							}
 						}
-					}
 
-					if (!isHit) {
-						Edge edge = new Edge(vertex1,vertex2);
-						vertex1.edges.Add(edge);
+						if (!isHit) {
+							Edge edge = new Edge(vertex1,vertex2);
+							vertex1.edges.Add(edge);
+						}
 					}
 				}
 			}

@@ -1,6 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.PlayerLoop;
-
 
 public class HumanBehaviour : MonoBehaviour {
     public float speed = 1f;
@@ -15,7 +13,6 @@ public class HumanBehaviour : MonoBehaviour {
         transform.Translate(new Vector2(horizontal * Time.deltaTime * speed, vertical * Time.deltaTime * speed),Space.World);
     }
 
-    
     public void AITurn(Quaternion rotation) {
         transform.rotation = rotation;
     }

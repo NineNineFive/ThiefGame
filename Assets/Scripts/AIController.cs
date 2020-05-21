@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class AIController : MonoBehaviour {
     private HumanBehaviour humanBehaviour;
@@ -14,6 +14,7 @@ public class AIController : MonoBehaviour {
     private Target target = null;
     public float hearingRadius = 5f;
     private bool didHey = false;
+    private bool move = false;
 
     // Start is called before the first frame update
     void Awake() {
@@ -40,65 +41,78 @@ public class AIController : MonoBehaviour {
 
         heardTarget = null;
     }
-    
-    
+
+    void Start() {
+        StartCoroutine(AILogic());
+    }
 
     // Update is called once per frame
     void FixedUpdate() {
-        // IF SEE THIEF
-        if (fov.target != null) {
-            // TARGET IS THIEF
-            target = new Target(fov.target);
-            if(!didHey&&!AudioManager.instance.isPlaying("Hey")){
-                AudioManager.instance.Play("Hey");
-                didHey = true;
-            }
-            if (Vector2.Distance(transform.position,target.pos)<0.2f) {
-                caught();
-            }
-            timer = 0;
-        } else {
-            didHey = false;
-            // IF HEARD SOUND
-            // TARGET IS SOUND
-            if(heardTarget!=null) {
-                path.from = transform.position;
-                path.to = heardTarget.pos;
-                findPath(path, path.from, path.to);
-                if (path.aStar.endDistance < hearingRadius) {
-                    // guard can hear
-                    if (waitSecs(10)) {
+        if (move) {
+            moveTowardsTarget();
+        }
+    }
+
+    private IEnumerator AILogic() {
+        while(true){
+            // IF SEE THIEF
+            if (fov.target != null) {
+                // TARGET IS THIEF
+                target = new Target(fov.target);
+                if(!didHey&&!AudioManager.instance.isPlaying("Hey")){
+                    AudioManager.instance.Play("Hey");
+                    didHey = true;
+                }
+                if (Vector2.Distance(transform.position,target.pos)<0.2f) {
+                    caught();
+                }
+                timer = 0;
+            } else {
+                didHey = false;
+                // IF HEARD SOUND
+                // TARGET IS SOUND
+                if(heardTarget!=null) {
+                    path.from = transform.position;
+                    path.to = heardTarget.pos;
+                    findPath(path, path.from, path.to);
+                    if (path.aStar.endDistance < hearingRadius) {
+                        // guard can hear
+                        if (waitSecs(7f/5)) {
+                            heardTarget = null;
+                            target = null;
+                        } else {
+                            target = heardTarget;
+                        }
+                    } else {
+                        // guard cant hear
                         heardTarget = null;
                         target = null;
-                    } else {
-                        target = heardTarget;
                     }
                 } else {
-                    // guard cant hear
-                    heardTarget = null;
-                    target = null;
-                }
-            } else {
-                // IF NO TARGET
-                if (waitSecs(3)) {
-                    //target = null;
-                    target = new Target(startingPos,startingRot);
+                    // IF NO TARGET
+                    if (waitSecs(3f/5)) {
+                        //target = null;
+                        target = new Target(startingPos,startingRot);
+                    }
                 }
             }
-        }
-        
-        // IF TARGET EXISTS
-        if (target != null) {
-            path.aStar.graph = graph;
-            path.from = transform.position;
-            path.to = target.pos;
-            findPath(path, transform.position, path.to);
-            if (Vector2.Distance(transform.position, target.pos) > 0.1f) {
-                moveTowardsTarget();
-            } else {
-                transform.rotation = startingRot;
+            
+            // IF TARGET EXISTS
+            if (target != null) {
+                path.aStar.graph = graph;
+                path.from = transform.position;
+                path.to = target.pos;
+                findPath(path, transform.position, path.to);
+                if (Vector2.Distance(transform.position, target.pos) > 0.1f) {
+                    move = true;
+                } else {
+                    move = false;
+                    transform.rotation = startingRot;
+                }
             }
+            yield return new WaitForSeconds(0.1f); // AI RUNS PATHFINDING 10 times a second
         }
+        yield return 0;
     }
 
 
@@ -122,7 +136,7 @@ public class AIController : MonoBehaviour {
     }
 
     private void moveTowardsTarget() {
-        if(path.aStar.theResult!=null){
+        if(path.aStar.theResult!=null&&target!=null){
             int count = path.aStar.theResult.Count;
             if(count>=1){
                 Vector2 waypointPos = new Vector2(0,0);

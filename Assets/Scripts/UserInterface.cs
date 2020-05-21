@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class UserInterface : MonoBehaviour {
@@ -9,7 +10,9 @@ public class UserInterface : MonoBehaviour {
     public RectTransform slotPrefab;
     public Text estimationText;
     public Text playerMessage;
+    public Text completeMessage;
     public Text goalText;
+    public Text toolText;
     private float totalPoints;
     
     public void Awake() {
@@ -32,9 +35,16 @@ public class UserInterface : MonoBehaviour {
             inventorySlot.name = "Slot "+i;
             inventorySlot.transform.SetParent(inventoryMenu.transform);
             inventorySlot.localScale = new Vector3(1,1,1);
+            inventorySlot.gameObject.AddComponent<MouseHover>();
             Item item = inventory.items[i];
+            if (item == null) {
+                inventorySlot.GetComponent<MouseHover>().empty = true;
+            }
+            
             if(item!=null){
                 totalWorth += item.worth;
+                inventorySlot.GetComponent<MouseHover>().cash = item.worth;
+                inventorySlot.GetComponent<MouseHover>().name = item.name;
                 inventorySlot.GetChild(0).GetComponent<Image>().sprite = inventory.items[i].sprite;
                 inventorySlot.GetComponent<Button>().onClick.AddListener(()=>item.use());
             }
@@ -61,15 +71,14 @@ public class UserInterface : MonoBehaviour {
     
     public void endScreen(bool completed) {
         if (completed) {
-            playerMessage.text = "Level Completed";
-            playerMessage.color = Color.green;
+            completeMessage.text = "Level Completed";
+            completeMessage.color = Color.green;
         } else {
-            playerMessage.text = "Level Failed";
-            playerMessage.color = Color.red;
+            completeMessage.text = "Level Failed";
+            completeMessage.color = Color.red;
         }
         inventoryMenu.SetActive(false);
         inventoryButton.SetActive(false);
         backgroundPanel.SetActive(true);
-
     }
 }

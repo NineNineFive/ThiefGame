@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Alarm : Item {
     public Alarm(Vector3 position, Vector3 scale, string name, Sprite sprite, float worth) {
@@ -28,7 +27,7 @@ public class Alarm : Item {
         AudioManager.instance.playAlarm(obj);
         
         
-        GameObject.Destroy(obj, 8.5f);
+        GameObject.Destroy(obj, 9.5f);
 
         // MAKE COLLIDER IF YOU WANT TO PICK IT UP AGAIN
         //obj.AddComponent<BoxCollider2D>().isTrigger = true;

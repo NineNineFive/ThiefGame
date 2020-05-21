@@ -7,16 +7,16 @@ public class Data : MonoBehaviour {
 	public Graph graph;
 	public string graphName;
 	public GameObject player;
-	private TextAsset jsonFile;
+
 	void Awake() {
 		if(instance==null) instance = this;
-		jsonFile = Resources.Load<TextAsset>(graphName);
 		graph = new Graph();
 		graph = loadGraph(graphName);
 		if(graph!=null){
 			graph.calculateEdges();
 		}
 	}
+	
 
 	public Inventory getPlayerInventory() {
 		if (player!=null) {
@@ -29,18 +29,14 @@ public class Data : MonoBehaviour {
 	}
 	
 	public Graph loadGraph(string name) {
-		jsonFile = Resources.Load<TextAsset>(name);
-		if (jsonFile!=null) {
+		if (name!="") {
 			// LOADS GRAPH FROM JSON DATA
-			FileUpdater fileUpdater = new FileUpdater(jsonFile);
-			String json = fileUpdater.loadJSONFile(name+".json");
+			FileUpdater fileUpdater = new FileUpdater();
+			String json = fileUpdater.loadJSONFile(name);
 			GraphData graphData = JsonUtility.FromJson<GraphData>(json);
-			//Debug.Log(graph);
-			//Debug.Log(graphData.vertices);
 			if(graphData!=null && graphData.vertices!=null&&graph!=null){
 				graph.vertices = graphData.vertices;
 			}
-			//Debug.Log(graph.vertices);
 
 			return graph;
 		} else return new Graph();
@@ -51,8 +47,8 @@ public class Data : MonoBehaviour {
 		graphData.vertices = graph.vertices;
         
 		string data = JsonUtility.ToJson(graphData, true);
-		FileUpdater fileUpdater = new FileUpdater(jsonFile);
-		bool status = fileUpdater.saveJSONFile(name+".json", data);
+		FileUpdater fileUpdater = new FileUpdater();
+		bool status = fileUpdater.saveJSONFile(name, data);
 		if (status == true) {
 			Debug.Log("Success");
 		}
@@ -67,25 +63,24 @@ public class GraphData {
 
 
 class FileUpdater {
-	public TextAsset jsonFile;
-
-	public FileUpdater(TextAsset jsonFile) {
-		this.jsonFile = jsonFile;
-	}
-	public String loadJSONFile (String fileName) {
+	public string loadJSONFile (string fileName) {
 		#if UNITY_EDITOR
-		TextAsset json = Resources.Load<TextAsset>("Assets/Resources/" + fileName);
-		String JSON = System.IO.File.ReadAllText("Assets/Resources/"+fileName); //write string to file
-		return JSON;
+			if (System.IO.File.Exists("Assets/Resources/" + fileName + ".json")) {
+				string JSON = System.IO.File.ReadAllText("Assets/Resources/" + fileName + ".json"); //write string to file
+				return JSON;
+			} else return "";
 		#endif
-		if (jsonFile == null)
-			return null;
-		else return jsonFile.text;
+		#if !UNITY_EDITOR
+			TextAsset json = Resources.Load<TextAsset>(fileName);
+			if (json == null)
+				return null;
+			else return json.text;
+		#endif
 	}
     
-	public bool saveJSONFile(String fileName, String JSONString) {
+	public bool saveJSONFile(string fileName, string json) {
 		try {
-			System.IO.File.WriteAllText("Assets/Resources/"+fileName, JSONString); //write string to file
+			System.IO.File.WriteAllText("Assets/Resources/" + fileName + ".json", json); //write string to file
 			return true;
 		} catch (Exception e) {
 			return false;
