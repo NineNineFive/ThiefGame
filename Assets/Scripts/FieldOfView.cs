@@ -141,7 +141,7 @@ public class FieldOfView : MonoBehaviour {
     
     private void OnTriggerStay2D(Collider2D other) {
         if (other.CompareTag("Player")) {
-            // DONT PREVENT PLAYER FROM ENDING THE GAME
+            // DONT PREVENT PLAYER FROM ENDING THE GAME 
             GameManager.getInstance().setEndingPrevented(true);
             target = other.gameObject;
         }
