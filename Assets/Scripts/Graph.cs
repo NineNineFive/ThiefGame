@@ -3,23 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-[ExecuteInEditMode]
-public class Graph : MonoBehaviour {
+public class Graph {
 	public List<Vertex> vertices;
-	
-	
-	public void Awake() {
-		if(Data.instance!=null) Data.instance.loadGraph(this);
-	}
-
-	public void Start() {
-		//fromTos = new List<FromTo>();
-		if(Data.instance!=null) Data.instance.loadGraph(this);
-		calculateEdges();
-	}
-
-
-	
 
 	public void remove(string name) {
 		// REMOVE VERTEX

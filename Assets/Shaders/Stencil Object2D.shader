@@ -39,7 +39,7 @@
 
             #include "UnityCG.cginc"
             
-            #pragma target 2.0
+            //#pragma target 2.0
             
 
             struct appdata_t {
@@ -55,6 +55,7 @@
 				UNITY_FOG_COORDS(1)
 			};
 			
+			
 			fixed4 _Color;
             
             v2f vert(appdata_t IN) {
@@ -68,6 +69,7 @@
 
 				return OUT;
 			}
+			
 
             sampler2D _MainTex;
 			sampler2D _AlphaTex;

@@ -1,154 +1,197 @@
 ﻿using System;
-using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class AIController : MonoBehaviour {
-    private GuardBehaviour guardBehaviour;
-    public GameObject target;
+    private HumanBehaviour humanBehaviour;
     public Graph graph;
     public Path path;
-    private float targetRange = 1.5f;
-    private float speed = 0.9f;
-    private float halt = 2f;
-    private State state; //statemachine
     private Vector3 startingPos;
-    private Vector3 position;
-    private IEnumerator corutineB;
-
-    private enum State {
-        Guarding,
-        ChasingTarget,
-        Caught
-    }
+    private Quaternion startingRot;
+    public FieldOfView fov;
+    private float timer = 0;
+    public Target heardTarget = null;
+    private Target target = null;
+    public float hearingRadius = 5f;
+    private bool didHey = false;
 
     // Start is called before the first frame update
     void Awake() {
         startingPos = transform.position;
-        target = GameObject.Find("Player");
-        state = State.Guarding;
-        
+        startingRot = transform.rotation;
+        Data data = Data.instance;
+        graph = data.graph;
+
         try {
-            guardBehaviour = GetComponent<GuardBehaviour>();
-            if (guardBehaviour == null) throw new MissingComponentException();
+            humanBehaviour = GetComponent<HumanBehaviour>();
+            if (humanBehaviour == null) throw new MissingComponentException();
         } catch (MissingComponentException componentException) {
-            gameObject.AddComponent(typeof(GuardBehaviour));
+            gameObject.AddComponent(typeof(HumanBehaviour));
             Debug.LogWarning("Couldn't find a guard behavior on object: "+gameObject.name+"... Therefore script added the guardbehavior component");
         }
 
         try {
-            if (graph == null || target == null) throw new NullReferenceException();
+            if (data.graph == null) throw new NullReferenceException();
         } catch (NullReferenceException nullException) {
             Debug.LogWarning("Graph or target might not be set in inspector");
         }
-        
-        path = new Path(graph, gameObject, target);
+
+        path = new Path(data.graph, transform.position, new Vector3(0,0,0));
+
+        heardTarget = null;
     }
+    
+    
 
     // Update is called once per frame
     void FixedUpdate() {
-        path.aStar.graph = graph;
-        FindPath(path, path.from, path.to);
-
-        switch (state) {
-            case State.Guarding:
-                Guarding();
-                break;
-            case State.ChasingTarget:
-                ChasingTarget();
-                break;
-            case State.Caught:
-                Caught();
-                break;
-        }
-    }
-
-    private void Guarding() {
-        if (FindTarget(targetRange)) {
-            state = State.ChasingTarget;
+        // IF SEE THIEF
+        if (fov.target != null) {
+            // TARGET IS THIEF
+            target = new Target(fov.target);
+            if(!didHey&&!AudioManager.instance.isPlaying("Hey")){
+                AudioManager.instance.Play("Hey");
+                didHey = true;
+            }
+            if (Vector2.Distance(transform.position,target.pos)<0.2f) {
+                caught();
+            }
+            timer = 0;
         } else {
-            corutineB = Return(halt);
-            StartCoroutine(corutineB);
-            state = State.Guarding;
-        }
-    }
-
-    private void ChasingTarget() {
-        Vertex pVertex = PlayerPath(path);
-        
-        if (!FindTarget(2f) || pVertex==null) {
-            state = State.Guarding;
-        }
-        
-        if (target != null) {
-            Turn(target);
-        }
-
-        if (FindTarget(0.2f)) {
-            state = State.Caught;
-        }
-        
-        if (pVertex != null)
-        {
-            position = transform.position;
-            Vector3 target = new Vector3(pVertex.x, pVertex.y, 0);
-            guardBehaviour.Move2(position, target, speed);
-        }
-    }
-
-    private void Caught() {
-        Debug.Log("Caught");
-    }
-
-    private bool FindTarget(float range) {
-        if (target != null && guardBehaviour != null) {
-            if (Vector2.Distance(guardBehaviour.transform.position, target.transform.position) < range) {
-                return true;
+            didHey = false;
+            // IF HEARD SOUND
+            // TARGET IS SOUND
+            if(heardTarget!=null) {
+                path.from = transform.position;
+                path.to = heardTarget.pos;
+                findPath(path, path.from, path.to);
+                if (path.aStar.endDistance < hearingRadius) {
+                    // guard can hear
+                    if (waitSecs(10)) {
+                        heardTarget = null;
+                        target = null;
+                    } else {
+                        target = heardTarget;
+                    }
+                } else {
+                    // guard cant hear
+                    heardTarget = null;
+                    target = null;
+                }
+            } else {
+                // IF NO TARGET
+                if (waitSecs(3)) {
+                    //target = null;
+                    target = new Target(startingPos,startingRot);
+                }
             }
         }
+        
+        // IF TARGET EXISTS
+        if (target != null) {
+            path.aStar.graph = graph;
+            path.from = transform.position;
+            path.to = target.pos;
+            findPath(path, transform.position, path.to);
+            if (Vector2.Distance(transform.position, target.pos) > 0.1f) {
+                moveTowardsTarget();
+            } else {
+                transform.rotation = startingRot;
+            }
+        }
+    }
+
+
+    private bool waitSecs(float seconds) {
+        if (timer >= seconds) {
+            timer = 0;
+            return true;
+        }
+        
+        timer += Time.deltaTime;
         return false;
     }
 
-    private void FindPath(Path path, GameObject startObj, GameObject endObj) {
-        Vertex start = new Vertex("Start", startObj.transform.position.x, startObj.transform.position.y);
-        Vertex end = new Vertex("End", endObj.transform.position.x, endObj.transform.position.y);
-        
-        path.aStar.graph = graph;
-        path.aStar.graph.vertices.Add(start);
-        path.aStar.graph.vertices.Add(end);
-
-        // TODO: implement calculateEdges only for start to all vertices and all vertices to end
-        graph.calculateEdges();
-
-        path.aStar.run(start, end);
-
-        path.aStar.graph.vertices.Remove(start);
-        path.aStar.graph.vertices.Remove(end);
+    private void caught() {
+        AudioManager.instance.Play("Caught");
+        GameManager.getInstance().caught = true;
+        GameManager.getInstance().endingPrevented = false;
+        GameManager.getInstance().endGameForce();
+        //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        //Application.LoadLevel("Menu");
     }
 
-    private Vertex PlayerPath(Path path) {
-        //bool isEmpty = path.aStar.theResult.Any();
-        if (path.aStar.theResult != null) {
+    private void moveTowardsTarget() {
+        if(path.aStar.theResult!=null){
             int count = path.aStar.theResult.Count;
-            if(count>=2){
-                return path.aStar.theResult[count - 2];
+            if(count>=1){
+                Vector2 waypointPos = new Vector2(0,0);
+
+                if (path.aStar.theResult != null) {
+                    if(count>=2){
+                        Vertex next = path.aStar.theResult[count - 2];
+                        waypointPos = new Vector2(next.x,next.y);
+                        // TURN SMOOTH
+                        float strength = 5;
+                        Quaternion targetRotation = Quaternion.LookRotation(Vector3.forward, target.pos - transform.position);
+                        float str = Mathf.Min(strength * Time.deltaTime, 1);
+                        Quaternion rotation = Quaternion.Lerp(transform.rotation, targetRotation, str);
+                        if(path.aStar.endDistance>0.01f){
+                            humanBehaviour.AITurn(rotation);
+                        }
+                        //humanBehaviour.turn(target.pos);
+                    }
+                }
+                humanBehaviour.AIMove(transform.position,waypointPos);
             }
         }
-        state = State.Guarding;
-        return null;
-    }
 
-    private IEnumerator Return(float sec) {
-        position = transform.position;
-        guardBehaviour.Move2(position, startingPos, speed);
-        yield return new WaitForSeconds(sec);
     }
     
-    public void Turn(GameObject direction)
-    {
-        float strength = 5;
-        Quaternion targetRotation =
-            Quaternion.LookRotation(Vector3.forward, direction.transform.position - transform.position);
-        float str = Mathf.Min(strength * Time.deltaTime, 1);
-        transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, str);
+    private void findPath(Path path, Vector3 startPos, Vector3 endPos) {
+        Data data = Data.instance;
+        if(data.graph !=null){
+            path.aStar.graph = data.graph;
+            
+            Vertex start = new Vertex("Start", startPos.x, startPos.y);
+            Vertex end = new Vertex("End", endPos.x, endPos.y);
+            
+            
+            // TODO: move start, remove and calculate elsewhere! like in the start of the AI controller and on doors when they open
+            path.aStar.graph.vertices.Add(start);
+            path.aStar.graph.vertices.Add(end);
+            
+            data.graph.calculateEdges();
+
+            path.aStar.run(start, end);
+
+            path.aStar.graph.vertices.Remove(start);
+            path.aStar.graph.vertices.Remove(end);
+            
+        }
     }
+
+    public void listenSounds(Vector2 soundPos) {
+        heardTarget = new Target(soundPos,Quaternion.identity);
+    }
+    
+}
+
+public class Target {
+    public GameObject obj;
+    public Vector3 pos;
+    public Quaternion rot;
+
+    public Target(GameObject obj) {
+        this.obj = obj;
+        if(obj!=null){
+            pos = obj.transform.position;
+        }
+    }
+    
+    public Target(Vector3 pos, Quaternion rot) {
+        this.pos = pos;
+        this.rot = rot;
+    }
+
 }

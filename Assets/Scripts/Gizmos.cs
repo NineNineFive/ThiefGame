@@ -3,17 +3,17 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-[ExecuteInEditMode]
 public class Gizmos : MonoBehaviour {
     public static Gizmos instance;
     [HideInInspector] public Vector3 cursorPos; // GraphEditor cursor in scene
-    public Graph graph;
+    private Data data;
     public List<AIController> AIs;
     private Camera sceneEditorCamera;
 
     private void Awake() {
         if(instance==null) instance = this;
         if(Camera.main!=null) sceneEditorCamera = Camera.main;
+        data = Data.instance;
     }
 
     #if UNITY_EDITOR
@@ -30,7 +30,7 @@ public class Gizmos : MonoBehaviour {
             drawEditorCursor();
 
             // GRAPH
-            if(graph!=null){
+            if(data!=null&&data.graph!=null){
                 drawGraph();
             }
         }
@@ -46,7 +46,7 @@ public class Gizmos : MonoBehaviour {
                 
                 float z = 0;
 
-                foreach (Vertex vertex in graph.vertices) {
+                foreach (Vertex vertex in data.graph.vertices) {
                     UnityEngine.Gizmos.color = Color.green;
                     Vector3 vector3 = new Vector3(vertex.x, vertex.y, z);
 
@@ -63,8 +63,10 @@ public class Gizmos : MonoBehaviour {
                     }
                 }
                     
+                // DRAW AI
                 foreach(AIController AI in AIs){
                     if(AI!=null) {
+                        // PATHFINDING
                         Path path = AI.path;
                         // ASTAR DEBUG GIZMOS
                         if(path!=null&&path.aStar!=null){
@@ -80,7 +82,12 @@ public class Gizmos : MonoBehaviour {
                                 }
                             }
                         }
+                        #if UNITY_EDITOR
+                        // SOUND LISTENER
+                        Handles.color = Color.red;
+                        Handles.DrawWireDisc(AI.transform.position , AI.transform.forward, AI.hearingRadius);
                         
+                        #endif
                     }
                 }
             }

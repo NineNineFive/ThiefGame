@@ -7,19 +7,23 @@ using UnityEngine;
 [ExecuteAlways]
 public class GraphEditor : EditorWindow {
     
-    public Graph graph;
+    public Data data;
     public Gizmos gizmos;
     public Vector3 cursorPos;
     private GameObject startObj;
     private GameObject endObj;
     private string name;
+    private string savedFileName;
     private Vector2 vector2;
-    private Data data;
 
     [MenuItem("Our Custom Editors/Graph Editor")]
     private static void Init() {
         EditorWindow window = GetWindow(typeof(GraphEditor));
         window.Show();
+    }
+
+    private void Awake() {
+        savedFileName = "";
     }
 
     private void Update() {
@@ -37,12 +41,18 @@ public class GraphEditor : EditorWindow {
     
     private void OnGUI() {
         // SELECT GRAPH
-        graph = (Graph) EditorGUILayout.ObjectField("Graph", graph, typeof(Graph), true);
+        data = (Data) EditorGUILayout.ObjectField("Data", data, typeof(Data), true);
         gizmos = (Gizmos) EditorGUILayout.ObjectField("Gizmos", gizmos, typeof(Gizmos), true);
-
+        string oldName = savedFileName;
+        savedFileName = EditorGUILayout.TextField("File Name", savedFileName);
+        if(data!=null&&(data.graph==null||savedFileName!=oldName)){ 
+            data.loadGraph(savedFileName);
+        }
         // IF GRAPH SELECTED
-        if(graph!=null&&gizmos!=null) {
-            if(gizmos.graph == null) gizmos.graph = graph;
+        if(data!=null&&gizmos!=null&&savedFileName!=null&&savedFileName!="") {
+            
+            
+
             /*
             if(gizmos.aStar == null) gizmos.aStar = new AStar(graph);
             */
@@ -54,7 +64,7 @@ public class GraphEditor : EditorWindow {
             if (GUILayout.Button("Create Node")) {
                 vector2.x = cursorPos.x;
                 vector2.y = cursorPos.y;
-                graph.add(name, vector2.x, vector2.y);
+                data.graph.add(name, vector2.x, vector2.y);
                 name = "";
                 GUI.FocusControl(null);
             }
@@ -63,42 +73,40 @@ public class GraphEditor : EditorWindow {
             
             name = EditorGUILayout.TextField("name", name);   
             if (GUILayout.Button("Remove Node")) {
-                graph.remove(name);
+                data.graph.remove(name);
             }
             
             EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
             
             if (GUILayout.Button("Remove All Nodes")) {
-                graph.clear();
+                data.graph.clear();
             }
 
             EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
             
-            
+            /*
             if (GUILayout.Button("Load Graph")) {
-                data = Data.instance;
                 if (data == null) {
                     data = Data.instance;
                 }
                 //Debug.Log("loading graph from "+data);
-                graph = data.loadGraph(graph); 
+                data.graph = data.loadGraph(savedFileName); 
 
                 EditorWindow view = GetWindow<SceneView>();
                 view.Repaint(); // REFRESHES THE SCENE VIEW
             }
+            */
             
             if (GUILayout.Button("Calculate Edges")) {
-                graph.calculateEdges();
+                data.graph.calculateEdges();
             }
             
             if (GUILayout.Button("Save Graph")) {
                 if (data == null) {
                     data = Data.instance;
                 }
-                data.saveGraph(graph); 
-                data.loadGraph(graph);
-                
-                
+                data.saveGraph(data.graph,savedFileName);
+
                 EditorWindow view = GetWindow<SceneView>();
                 view.Repaint(); // REFRESHES THE SCENE VIEW
             }
@@ -108,8 +116,10 @@ public class GraphEditor : EditorWindow {
             startObj = (GameObject) EditorGUILayout.ObjectField("Start", startObj, typeof(GameObject), true);
             endObj = (GameObject) EditorGUILayout.ObjectField("End", endObj, typeof(GameObject), true);
             if (GUILayout.Button("Run AStar")) {
-
-                // RUNASTAR TODO: do it
+                Vertex vertexStart = new Vertex("Start",startObj.transform.position.x,startObj.transform.position.y);
+                Vertex vertexEnd = new Vertex("End",endObj.transform.position.x,endObj.transform.position.y);
+                AStar aStar = new AStar(data.graph);
+                aStar.run(vertexStart,vertexEnd);
             }
             
             EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);

@@ -3,21 +3,45 @@
 public class KeyBehaviour : MonoBehaviour {
     public string password;
     public Key key;
-
+    private Sprite sprite;
+    public float worth;
     public void Start() {
-        key = new Key(password);
+        sprite = GetComponent<SpriteRenderer>().sprite;
+        key = new Key(password, sprite, worth);
     }
 
-    public void OnCollisionEnter2D(Collision2D other) {
-        //if (!PlayerController.playerInventory.checkForItem("key")){
-        key.name = password;
-        
+    public void OnTriggerStay2D(Collider2D other) {
         if (other.gameObject.CompareTag("Player")) {
-            PlayerController.playerInventory.addItem(key);
-            gameObject.SetActive(false);
+            UserInterface.instance.playerMessage.text = "Press Spacebar to pick up";
+            if(Input.GetKey(KeyCode.Space)){
+                PlayerController controller = other.gameObject.GetComponent<PlayerController>();
+                controller.inventory.addItem(key);
+                UserInterface.instance.updateInventory();
+                AudioManager.instance.Play("heavyItem");
+                Destroy(gameObject);
+            }
         }
-
-        //}
-        PlayerController.playerInventory.showInventory();
     }
+    private void OnTriggerExit2D(Collider2D other) {
+        if (other.gameObject.CompareTag("Player")) {
+            UserInterface.instance.playerMessage.text = "";
+        }
+    }
+    /*
+    public void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.gameObject.CompareTag("Player")) {
+            PlayerController controller = other.gameObject.GetComponent<PlayerController>();
+            controller.nearItem = gameObject;
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        if (other.gameObject.CompareTag("Player")) {
+            PlayerController controller = other.gameObject.GetComponent<PlayerController>();
+            controller.nearItem = null;
+        }
+    }
+    */
 }

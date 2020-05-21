@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour {
@@ -7,8 +6,13 @@ public class PlayerController : MonoBehaviour {
     public float vertical = 0;
     public float horizontal = 0;
     public Vector3 mousePosition;
-    public static Inventory playerInventory = new Inventory(10);
-    public PlayerBehavior playerBehavior;
+    public Inventory inventory = new Inventory(24);
+    public HumanBehaviour humanBehaviour;
+    public Camera camera;
+
+    private void Start() {
+        camera = Camera.main;
+    }
 
     // Update is called once per frame
     void Update(){
@@ -16,10 +20,18 @@ public class PlayerController : MonoBehaviour {
         vertical = Input.GetAxis("Vertical");
         horizontal = Input.GetAxis("Horizontal");
         mousePosition = Input.mousePosition;
+        if (camera != null) {
+            camera.transform.position = new Vector3(transform.position.x,transform.position.y,-100);
+        }
+
     }
     
     void FixedUpdate() {
-        playerBehavior.Move(horizontal, vertical);
-        playerBehavior.LookAtMouse(mousePosition);
+        Vector3 direction = new Vector3(0,0,0);
+        if(camera!=null){
+            direction = camera.ScreenToWorldPoint(mousePosition);
+        }
+        humanBehaviour.turn(direction);
+        humanBehaviour.move(horizontal, vertical);
     }
 }

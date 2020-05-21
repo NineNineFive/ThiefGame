@@ -4,16 +4,14 @@ using UnityEngine;
 
 public class Inventory {
     public Item[] items;
-
+    public Transform itemPrefab;
     public Inventory(int space) {
         items = new Item[space];
     }
 
     public void addItem(Item item) {
-        for (int i = 0; i < items.Length; i++)
-        {
-            if (items[i] == null)
-            {
+        for (int i = 0; i < items.Length; i++) {
+            if (items[i] == null) {
                 items[i] = item;
                 break;
             }
@@ -22,8 +20,7 @@ public class Inventory {
 
     public void removeItem(Item item) {
         for (int i = 0; i < items.Length; i++) {
-            if (items[i] == item)
-            {
+            if (items[i] == item) {
                 items[i] = null;
                 break;
             }
@@ -34,8 +31,7 @@ public class Inventory {
         bool searchResult = false;
         foreach (Item item in items) {
             if (item != null) {
-                if (item.name == name)
-                {
+                if (item.name == name) {
                     searchResult = true;
                 }
             }
@@ -43,19 +39,16 @@ public class Inventory {
         
         return searchResult;
     }
-
+    
     public void showInventory() {
         string itemString = "";
         foreach (Item item in items) {
-            if (item == null)
-            {
+            if (item == null) {
                 itemString += "empty ";
-            }
-            else
-            {
+            } else {
                 itemString += item.name + " ";
             }
         }
-        Debug.Log(itemString);
+        //Debug.Log(itemString);
     }
 }

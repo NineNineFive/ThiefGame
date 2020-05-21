@@ -5,7 +5,7 @@ public class AStar {
     private float infinity = Int32.MaxValue;
     private bool pathable;
     public List<Vertex> theResult;
-
+    public float endDistance;
     public AStar(Graph graph) {
         this.graph = graph;
     }
@@ -60,6 +60,7 @@ public class AStar {
             openList.Remove(current);
             //Debug.Log("Remove from open list: " + current.name);
             if (current.name.Equals(end.name)) {
+                endDistance = end.f;
                 // 1
                 return true;
             }

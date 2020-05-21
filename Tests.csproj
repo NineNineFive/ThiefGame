@@ -261,6 +261,12 @@
  <Reference Include="UnityEditor.WindowsStandalone.Extensions">
  <HintPath>D:/Unity/2019.3.3f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport/UnityEditor.WindowsStandalone.Extensions.dll</HintPath>
  </Reference>
+ <Reference Include="UnityEditor.OSXStandalone.Extensions">
+ <HintPath>D:/Unity/2019.3.3f1/Editor/Data/PlaybackEngines/MacStandaloneSupport/UnityEditor.OSXStandalone.Extensions.dll</HintPath>
+ </Reference>
+ <Reference Include="UnityEditor.LinuxStandalone.Extensions">
+ <HintPath>D:/Unity/2019.3.3f1/Editor/Data/PlaybackEngines/LinuxStandaloneSupport/UnityEditor.LinuxStandalone.Extensions.dll</HintPath>
+ </Reference>
  <Reference Include="nunit.framework">
  <HintPath>D:/Spiludvikling/BachelorGame/Bachelor Game/Library/PackageCache/com.unity.ext.nunit@1.0.0/net35/unity-custom/nunit.framework.dll</HintPath>
  </Reference>
