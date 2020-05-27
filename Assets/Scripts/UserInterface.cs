@@ -35,7 +35,6 @@ public class UserInterface : MonoBehaviour {
             inventorySlot.name = "Slot "+i;
             inventorySlot.transform.SetParent(inventoryMenu.transform);
             inventorySlot.localScale = new Vector3(1,1,1);
-            inventorySlot.gameObject.AddComponent<MouseHover>();
             Item item = inventory.items[i];
             if (item == null) {
                 inventorySlot.GetComponent<MouseHover>().empty = true;

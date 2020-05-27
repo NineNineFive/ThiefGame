@@ -39,16 +39,4 @@ public class Inventory {
         
         return searchResult;
     }
-    
-    public void showInventory() {
-        string itemString = "";
-        foreach (Item item in items) {
-            if (item == null) {
-                itemString += "empty ";
-            } else {
-                itemString += item.name + " ";
-            }
-        }
-        //Debug.Log(itemString);
-    }
 }

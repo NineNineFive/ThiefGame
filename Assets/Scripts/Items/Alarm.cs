@@ -1,8 +1,7 @@
 ﻿using UnityEngine;
 
 public class Alarm : Item {
-    public Alarm(Vector3 position, Vector3 scale, string name, Sprite sprite, float worth) {
-        this.position = position;
+    public Alarm(Vector3 scale, string name, Sprite sprite, float worth) {
         this.scale = scale;
         this.name = name;
         this.sprite = sprite;
@@ -17,10 +16,7 @@ public class Alarm : Item {
         obj.transform.localScale = scale;
         SpriteRenderer spriteRenderer = obj.AddComponent<SpriteRenderer>();
         spriteRenderer.sprite = sprite;
-        
-        AlarmBehaviour alarmBehaviour = obj.AddComponent<AlarmBehaviour>();
-        alarmBehaviour.worth = worth;
-        
+
         Data.instance.player.GetComponent<PlayerController>().inventory.removeItem(this);
         UserInterface.instance.updateInventory();
         

@@ -48,6 +48,10 @@ MonoBehaviour:
   rayCount: 200
   FOV: 120
   viewDistance: 2
+  visible: 1
+  renderUpdater: 1
+  colliderOn: 1
+  target: {fileID: 0}
 --- !u!33 &600793668
 MeshFilter:
   m_ObjectHideFlags: 0

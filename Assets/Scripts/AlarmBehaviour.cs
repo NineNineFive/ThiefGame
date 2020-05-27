@@ -7,7 +7,7 @@ public class AlarmBehaviour : MonoBehaviour {
     
     public void Awake() {
         sprite = GetComponent<SpriteRenderer>().sprite;
-        alarm = new Alarm(transform.position,transform.localScale,"Alarm", sprite, worth);
+        alarm = new Alarm(transform.localScale,"Alarm", sprite, worth);
     }
 
     public void OnTriggerStay2D(Collider2D other) {

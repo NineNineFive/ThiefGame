@@ -18,6 +18,7 @@ public class ValueableBehaviour : MonoBehaviour {
                 PlayerController controller = other.gameObject.GetComponent<PlayerController>();
                 controller.inventory.addItem(valueable);
                 UserInterface.instance.updateInventory();
+                AudioManager.instance.Play("heavyItem");
                 Destroy(gameObject);
             }
         }

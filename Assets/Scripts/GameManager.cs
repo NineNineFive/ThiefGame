@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour {
     private static GameManager instance;
@@ -35,13 +34,7 @@ public class GameManager : MonoBehaviour {
                     Time.timeScale = 0;
                 }
             } else {
-                UserInterface.instance.endScreen(false);
-                AudioManager.instance.Play("Lose");
-                if(PlayerPrefs.GetInt(sceneName)!=1){
-                    PlayerPrefs.SetInt(sceneName,0);
-                }
-                PlayerPrefs.Save();
-                Time.timeScale = 0;
+                endGameForce();
             }
         }
     }
@@ -49,9 +42,6 @@ public class GameManager : MonoBehaviour {
     public void endGameForce() {
         UserInterface.instance.endScreen(false);
         AudioManager.instance.Play("Lose");
-        if(PlayerPrefs.GetInt(sceneName)!=1){
-            PlayerPrefs.SetInt(sceneName,0);
-        }
         PlayerPrefs.Save();
         Time.timeScale = 0;
     }

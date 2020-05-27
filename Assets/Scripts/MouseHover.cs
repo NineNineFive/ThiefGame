@@ -2,7 +2,6 @@
 using UnityEngine.EventSystems;
 
 public class MouseHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler {
-    public static UserInterface instance;
     public bool empty = false;
     public float cash;
     public string name;

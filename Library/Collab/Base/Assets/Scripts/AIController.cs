@@ -4,30 +4,24 @@ using UnityEngine;
 
 public class AIController : MonoBehaviour {
     private HumanBehaviour humanBehaviour;
-    public GameObject target;
     public Graph graph;
     public Path path;
-    private float targetRange = 1.5f;
-    private float speed = 0.9f;
-    private float halt = 2f;
-    private State state; //statemachine
     private Vector3 startingPos;
-    private Vector3 position;
+    private Quaternion startingRot;
     public FieldOfView fov;
-        
-
-    private enum State {
-        Guarding,
-        ChasingTarget,
-        Caught
-    }
+    private float timer = 0;
+    public Target heardTarget = null;
+    private Target target = null;
+    public float hearingRadius = 5f;
+    private bool didHey = false;
+    private bool move = false;
 
     // Start is called before the first frame update
     void Awake() {
         startingPos = transform.position;
-        target = GameObject.Find("Player");
-        state = State.Guarding;
+        startingRot = transform.rotation;
         Data data = Data.instance;
+        graph = data.graph;
 
         try {
             humanBehaviour = GetComponent<HumanBehaviour>();
@@ -38,109 +32,144 @@ public class AIController : MonoBehaviour {
         }
 
         try {
-            if (data.graph == null || target == null) throw new NullReferenceException();
+            if (data.graph == null) throw new NullReferenceException();
         } catch (NullReferenceException nullException) {
             Debug.LogWarning("Graph or target might not be set in inspector");
         }
 
-        path = new Path(data.graph, gameObject, target);
+        path = new Path(data.graph, transform.position, new Vector3(0,0,0));
+
+        heardTarget = null;
     }
-    
-    
+
+    void Start() {
+        StartCoroutine(AILogic());
+    }
 
     // Update is called once per frame
     void FixedUpdate() {
-
-        path.aStar.graph = graph;
-        FindPath(path, path.from, path.to);
-
-        switch (state) {
-            case State.Guarding:
-                Guarding();
-                break;
-            case State.ChasingTarget:
-                ChasingTarget();
-                break;
-            case State.Caught:
-                Caught();
-                break;
+        if (move) {
+            moveTowardsTarget();
         }
     }
 
-    private void Guarding() {
-        if (FindTarget(targetRange)||fov.target!=null) {
-            state = State.ChasingTarget;
-        } else {
-            state = State.Guarding;
+    private IEnumerator AILogic() {
+        while(true){
+            // IF SEE THIEF
+            if (fov.target != null) {
+                // TARGET IS THIEF
+                target = new Target(fov.target);
+                if(!didHey&&!AudioManager.instance.isPlaying("Hey")){
+                    AudioManager.instance.Play("Hey");
+                    didHey = true;
+                }
+                if (Vector2.Distance(transform.position,target.pos)<0.2f) {
+                    caught();
+                }
+                timer = 0;
+            } else {
+                didHey = false;
+                // IF HEARD SOUND
+                // TARGET IS SOUND
+                if(heardTarget!=null) {
+                    path.from = transform.position;
+                    path.to = heardTarget.pos;
+                    findPath(path, path.from, path.to);
+                    if (path.aStar.endDistance < hearingRadius) {
+                        // guard can hear
+                        if (waitSecs(7f/5)) {
+                            heardTarget = null;
+                            target = null;
+                        } else {
+                            target = heardTarget;
+                        }
+                    } else {
+                        // guard cant hear
+                        heardTarget = null;
+                        target = null;
+                    }
+                } else {
+                    // IF NO TARGET
+                    if (waitSecs(3f/5)) {
+                        //target = null;
+                        target = new Target(startingPos,startingRot);
+                    }
+                }
+            }
+            
+            // IF TARGET EXISTS
+            if (target != null) {
+                path.aStar.graph = graph;
+                path.from = transform.position;
+                path.to = target.pos;
+                findPath(path, transform.position, path.to);
+                if (Vector2.Distance(transform.position, target.pos) > 0.1f) {
+                    move = true;
+                } else {
+                    move = false;
+                    transform.rotation = startingRot;
+                }
+            }
+            yield return new WaitForSeconds(0.1f); // AI RUNS PATHFINDING 10 times a second
         }
+        yield return 0;
     }
-    
-    private void ChasingTarget() {
-        if(fov.target!=null){
-            path.to = fov.target.gameObject;
+
+
+    private bool waitSecs(float seconds) {
+        if (timer >= seconds) {
+            timer = 0;
+            return true;
         }
         
-        MoveTowardsTarget();
-        if (!FindTarget(0.5f)) {
-            state = State.Guarding;
-        }
-
-        if (FindTarget(0.2f)) {
-            state = State.Caught;
-        }
-    }
-    
-    private void Caught() {
-        Application.LoadLevel(0);
-        //Debug.Log("Caught");
-    }
-
-    private void MoveTowardsTarget() {
-        Vector2 waypointPos = getNextWaypointPos();
-        Vector2 targetPos = getTarget();
-        humanBehaviour.turn(targetPos);
-        humanBehaviour.AIMove(transform.position,waypointPos);
-    }
-    
-
-    private Vector2 getNextWaypointPos() {
-        if (path.aStar.theResult != null) {
-            int count = path.aStar.theResult.Count;
-            if(count>=2){
-                Vertex next = path.aStar.theResult[count - 2];
-                return new Vector2(next.x,next.y);
-            }
-        } 
-        return new Vector2(0,0);
-    }
-
-    private Vector2 getTarget() {
-        int count = path.aStar.theResult.Count;
-        if(count>=1){
-            Vertex target = path.aStar.theResult[0];
-            return new Vector2(target.x,target.y);
-        }
-
-        return new Vector2(0,0);
-    }
-
-
-    private bool FindTarget(float range) {
-        if (target != null && humanBehaviour != null) {
-            if (Vector2.Distance(humanBehaviour.transform.position, target.transform.position) < range) {
-                return true;
-            }
-        }
+        timer += Time.deltaTime;
         return false;
     }
-    private void FindPath(Path path, GameObject startObj, GameObject endObj) {
-        Data data;
-        if(Data.instance !=null){
-            data = Data.instance;
-                
-            Vertex start = new Vertex("Start", startObj.transform.position.x, startObj.transform.position.y);
-            Vertex end = new Vertex("End", endObj.transform.position.x, endObj.transform.position.y);
+
+    private void caught() {
+        AudioManager.instance.Play("Caught");
+        GameManager.getInstance().caught = true;
+        GameManager.getInstance().endingPrevented = false;
+        GameManager.getInstance().endGameForce();
+        //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        //Application.LoadLevel("Menu");
+    }
+
+    private void moveTowardsTarget() {
+        if(path.aStar.theResult!=null&&target!=null){
+            int count = path.aStar.theResult.Count;
+            if(count>=1){
+                Vector2 waypointPos = new Vector2(0,0);
+
+                if (path.aStar.theResult != null) {
+                    if(count>=2){
+                        Vertex next = path.aStar.theResult[count - 2];
+                        waypointPos = new Vector2(next.x,next.y);
+                        // TURN SMOOTH
+                        float strength = 5;
+                        Quaternion targetRotation = Quaternion.LookRotation(Vector3.forward, target.pos - transform.position);
+                        float str = Mathf.Min(strength * Time.deltaTime, 1);
+                        Quaternion rotation = Quaternion.Lerp(transform.rotation, targetRotation, str);
+                        if(path.aStar.endDistance>0.01f){
+                            humanBehaviour.AITurn(rotation);
+                        }
+                        //humanBehaviour.turn(target.pos);
+                    }
+                }
+                humanBehaviour.AIMove(transform.position,waypointPos);
+            }
+        }
+
+    }
+    
+    private void findPath(Path path, Vector3 startPos, Vector3 endPos) {
+        Data data = Data.instance;
+        if(data.graph !=null){
             path.aStar.graph = data.graph;
+            
+            Vertex start = new Vertex("Start", startPos.x, startPos.y);
+            Vertex end = new Vertex("End", endPos.x, endPos.y);
+            
             
             // TODO: move start, remove and calculate elsewhere! like in the start of the AI controller and on doors when they open
             path.aStar.graph.vertices.Add(start);
@@ -155,4 +184,28 @@ public class AIController : MonoBehaviour {
             
         }
     }
+
+    public void listenSounds(Vector2 soundPos) {
+        heardTarget = new Target(soundPos,Quaternion.identity);
+    }
+    
+}
+
+public class Target {
+    public GameObject obj;
+    public Vector3 pos;
+    public Quaternion rot;
+
+    public Target(GameObject obj) {
+        this.obj = obj;
+        if(obj!=null){
+            pos = obj.transform.position;
+        }
+    }
+    
+    public Target(Vector3 pos, Quaternion rot) {
+        this.pos = pos;
+        this.rot = rot;
+    }
+
 }

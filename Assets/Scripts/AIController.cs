@@ -15,6 +15,7 @@ public class AIController : MonoBehaviour {
     public float hearingRadius = 5f;
     private bool didHey = false;
     private bool move = false;
+    public float caughtRange = 0.2f;
 
     // Start is called before the first frame update
     void Awake() {
@@ -58,12 +59,12 @@ public class AIController : MonoBehaviour {
             // IF SEE THIEF
             if (fov.target != null) {
                 // TARGET IS THIEF
-                target = new Target(fov.target);
+                target = new Target(fov.target.transform.position);
                 if(!didHey&&!AudioManager.instance.isPlaying("Hey")){
                     AudioManager.instance.Play("Hey");
                     didHey = true;
                 }
-                if (Vector2.Distance(transform.position,target.pos)<0.2f) {
+                if (Vector2.Distance(transform.position,target.pos)<caughtRange) { //If player is caught
                     caught();
                 }
                 timer = 0;
@@ -77,7 +78,7 @@ public class AIController : MonoBehaviour {
                     findPath(path, path.from, path.to);
                     if (path.aStar.endDistance < hearingRadius) {
                         // guard can hear
-                        if (waitSecs(7f/5)) {
+                        if (waitSecs(7f,false)) {
                             heardTarget = null;
                             target = null;
                         } else {
@@ -90,7 +91,7 @@ public class AIController : MonoBehaviour {
                     }
                 } else {
                     // IF NO TARGET
-                    if (waitSecs(3f/5)) {
+                    if (waitSecs(3f,false)) {
                         //target = null;
                         target = new Target(startingPos,startingRot);
                     }
@@ -116,20 +117,23 @@ public class AIController : MonoBehaviour {
     }
 
 
-    private bool waitSecs(float seconds) {
+    private bool waitSecs(float seconds, bool deltaTime) {
         if (timer >= seconds) {
             timer = 0;
             return true;
         }
-        
-        timer += Time.deltaTime;
+        if(deltaTime){
+            timer += Time.deltaTime;
+        }
+        else {
+            timer += 0.1f;
+        }
         return false;
     }
 
     private void caught() {
         AudioManager.instance.Play("Caught");
         GameManager.getInstance().caught = true;
-        GameManager.getInstance().endingPrevented = false;
         GameManager.getInstance().endGameForce();
         //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         //Application.LoadLevel("Menu");
@@ -196,11 +200,8 @@ public class Target {
     public Vector3 pos;
     public Quaternion rot;
 
-    public Target(GameObject obj) {
-        this.obj = obj;
-        if(obj!=null){
-            pos = obj.transform.position;
-        }
+    public Target(Vector3 pos) {
+        this.pos = pos;
     }
     
     public Target(Vector3 pos, Quaternion rot) {
